@@ -81,6 +81,35 @@ Jules soll ein modulares Lovelace Dashboard / Card Package erstellen (z. B. als 
 
 ---
 
+
+### Work Package 4: Industrial Smart Meter Emulation (Modbus TCP SDM630 & go-e Wallbox Communication)
+
+Der ESPHome Power Monitor soll so erweitert werden, dass er wie ein industrieller Standard-Smart-Meter (z.B. Eastron SDM630) direkt mit der Wallbox (**go-eCharger Gemini Flex / V4**, SN 302240) und PV-Überschuss-Managern (EVCC/openWB) kommuniziert:
+
+1. **Modbus TCP Server (Port 502) - Eastron SDM630 Register-Emulation:**
+   - Bereitstellung eines leichtgewichtigen Modbus TCP Servers auf dem ESP32 (z.B. via Arduino ModbusIP oder C++ Custom Include).
+   - Abbildung der ATM90E32 Messwerte auf standardisierte SDM630 Input/Holding Register (IEEE 754 Float32 Big-Endian):
+     - `30001 - 30002`: Spannung L1 ($V_{L1}$)
+     - `30003 - 30004`: Spannung L2 ($V_{L2}$)
+     - `30005 - 30006`: Spannung L3 ($V_{L3}$)
+     - `30007 - 30008`: Strom L1 ($I_{L1}$)
+     - `30009 - 30010`: Strom L2 ($I_{L2}$)
+     - `30011 - 30012`: Strom L3 ($I_{L3}$)
+     - `30013 - 30014`: Wirkleistung L1 ($P_{L1}$)
+     - `30015 - 30016`: Wirkleistung L2 ($P_{L2}$)
+     - `30017 - 30018`: Wirkleistung L3 ($P_{L3}$)
+     - `30053 - 30054`: Gesamt-Wirkleistung ($P_{tot}$)
+     - `30071 - 30072`: Netzfrequenz ($f_{Grid} = 50.0 \text{ Hz}$)
+     - `30343 - 30344`: Gesamtbezug Wirkenergie ($E_{imp} \text{ in kWh}$)
+   - **Vorteil:** Die go-e Wallbox, EVCC oder openWB können den ESP32 direkt per IP und Port 502 als echten physischen "Eastron SDM630" Smart Meter ansteuern – völlig unabhängig von Home Assistant Ausfällen!
+
+2. **Direkte go-eCharger API v2 Push-Option (Zero-Latency PV-Überschuss):**
+   - Optionale HTTP-Request Routine in `power-monitor.yaml`:
+     - Sende alle 2-5 Sekunden bei Leistungsänderung den aktuellen Netzübergabewert ($P_{grid}$) per POST/GET an die go-eCharger API (`http://<wallbox_ip>/api/set?ids={"pgrid": <grid_power_watts>}`).
+     - Dadurch regelt die Wallbox den Ladestrom (6A bis 16A, 1-/3-phasig) in Echtzeit exakt nach PV-Überschuss.
+
+---
+
 ## 3. Ziel-Dateien & Output-Pfade
 
 1. **ESPHome Firmware Config:**
